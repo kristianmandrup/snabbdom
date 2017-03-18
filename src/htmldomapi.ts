@@ -1,5 +1,5 @@
 export interface DOMAPI {
-  createElement: (tagName: any) => HTMLElement;
+  createElement: (tagName: any, attrs?: Object) => HTMLElement;
   createElementNS: (namespaceURI: string, qualifiedName: string) => Element;
   createTextNode: (text: string) => Text;
   createComment: (text: string) => Comment;
@@ -16,8 +16,8 @@ export interface DOMAPI {
   isComment: (node: Node) => node is Comment;
 }
 
-function createElement(tagName: any): HTMLElement {
-  return document.createElement(tagName);
+function createElement(tagName: any, attrs?: Object): HTMLElement {
+  return document.createElement.apply(document, [tagName, attrs]);
 }
 
 function createElementNS(namespaceURI: string, qualifiedName: string): Element {

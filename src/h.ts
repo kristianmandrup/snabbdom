@@ -1,4 +1,4 @@
-import {vnode, VNode, VNodeData} from './vnode';
+import { vnode, VNode, VNodeData } from './vnode';
 import * as is from './is';
 
 function addNS(data: any, children: Array<VNode> | undefined, sel: string | undefined): void {
@@ -21,6 +21,7 @@ export function h(sel: string, data: VNodeData, text: string): VNode;
 export function h(sel: string, data: VNodeData, children: Array<VNode>): VNode;
 export function h(sel: any, b?: any, c?: any): VNode {
   var data: VNodeData = {}, children: any, text: any, i: number;
+
   if (c !== undefined) {
     data = b;
     if (is.array(c)) { children = c; }
@@ -30,7 +31,9 @@ export function h(sel: any, b?: any, c?: any): VNode {
     if (is.array(b)) { children = b; }
     else if (is.primitive(b)) { text = b; }
     else if (b && b.sel) { children = [b]; }
-    else { data = b; }
+    else {
+      data = b;
+    }
   }
   if (is.array(children)) {
     for (i = 0; i < children.length; ++i) {

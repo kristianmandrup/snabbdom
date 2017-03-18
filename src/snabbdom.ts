@@ -1,9 +1,9 @@
 /* global module, document, Node */
-import {Module} from './modules/module';
-import {Hooks} from './hooks';
-import vnode, {VNode, VNodeData, Key} from './vnode';
+import { Module } from './modules/module';
+import { Hooks } from './hooks';
+import vnode, { VNode, VNodeData, Key } from './vnode';
 import * as is from './is';
-import htmlDomApi, {DOMAPI} from './htmldomapi';
+import htmlDomApi, { DOMAPI } from './htmldomapi';
 
 function isUndef(s: any): boolean { return s === undefined; }
 function isDef(s: any): boolean { return s !== undefined; }
@@ -12,15 +12,30 @@ type VNodeQueue = Array<VNode>;
 
 const emptyNode = vnode('', {}, [], undefined, undefined);
 
-function sameVnode(vnode1: VNode, vnode2: VNode): boolean {
+function sameVnodeTag(vnode1: VNode, vnode2: VNode): boolean {
   return vnode1.key === vnode2.key && vnode1.sel === vnode2.sel;
 }
 
+function isCustomAttr(vnode: VNode): boolean {
+  return vnode.data && vnode.data.attrs ? vnode.data.attrs['is'] : undefined;
+}
+
+function sameVnodeCustomElem(vnode1: VNode, vnode2: VNode): boolean {
+  let isCustom1 = isCustomAttr(vnode1), isCustom2 = isCustomAttr(vnode2)
+  if (!(isCustom1 && isCustom2)) {
+    return true;
+  }
+  return isCustom1 === isCustom2;
+}
+
+function sameVnode(vnode1: VNode, vnode2: VNode): boolean {
+  return sameVnodeTag(vnode1, vnode2) && sameVnodeCustomElem(vnode1, vnode2);
+}
 function isVnode(vnode: any): vnode is VNode {
   return vnode.sel !== undefined;
 }
 
-type KeyToIndexMap = {[key: string]: number};
+type KeyToIndexMap = { [key: string]: number };
 
 type ArraysOf<T> = {
   [K in keyof T]: (T[K])[];
@@ -42,8 +57,8 @@ function createKeyToOldIdx(children: Array<VNode>, beginIdx: number, endIdx: num
 
 const hooks: (keyof Module)[] = ['create', 'update', 'remove', 'destroy', 'pre', 'post'];
 
-export {h} from './h';
-export {thunk} from './thunk';
+export { h } from './h';
+export { thunk } from './thunk';
 
 export function init(modules: Array<Partial<Module>>, domApi?: DOMAPI) {
   let i: number, j: number, cbs = ({} as ModuleHooks);
@@ -77,6 +92,7 @@ export function init(modules: Array<Partial<Module>>, domApi?: DOMAPI) {
 
   function createElm(vnode: VNode, insertedVnodeQueue: VNodeQueue): Node {
     let i: any, data = vnode.data;
+
     if (data !== undefined) {
       if (isDef(i = data.hook) && isDef(i = i.init)) {
         i(vnode);
@@ -95,9 +111,15 @@ export function init(modules: Array<Partial<Module>>, domApi?: DOMAPI) {
       const dotIdx = sel.indexOf('.', hashIdx);
       const hash = hashIdx > 0 ? hashIdx : sel.length;
       const dot = dotIdx > 0 ? dotIdx : sel.length;
+
+      // extract special is attribute for custom elements support
+      const attrs = vnode.data ? vnode.data : undefined
+      const isElem = attrs && attrs.is ? { is: attrs.is } : undefined
+
       const tag = hashIdx !== -1 || dotIdx !== -1 ? sel.slice(0, Math.min(hash, dot)) : sel;
+      // supports custom elements via isElem
       const elm = vnode.elm = isDef(data) && isDef(i = (data as VNodeData).ns) ? api.createElementNS(i, tag)
-                                                                               : api.createElement(tag);
+        : api.createElement(tag, isElem);
       if (hash < dot) elm.id = sel.slice(hash + 1, dot);
       if (dotIdx > 0) elm.className = sel.slice(dot + 1).replace(/\./g, ' ');
       for (i = 0; i < cbs.create.length; ++i) cbs.create[i](emptyNode, vnode);
@@ -123,11 +145,11 @@ export function init(modules: Array<Partial<Module>>, domApi?: DOMAPI) {
   }
 
   function addVnodes(parentElm: Node,
-                     before: Node | null,
-                     vnodes: Array<VNode>,
-                     startIdx: number,
-                     endIdx: number,
-                     insertedVnodeQueue: VNodeQueue) {
+    before: Node | null,
+    vnodes: Array<VNode>,
+    startIdx: number,
+    endIdx: number,
+    insertedVnodeQueue: VNodeQueue) {
     for (; startIdx <= endIdx; ++startIdx) {
       const ch = vnodes[startIdx];
       if (ch != null) {
@@ -153,9 +175,9 @@ export function init(modules: Array<Partial<Module>>, domApi?: DOMAPI) {
   }
 
   function removeVnodes(parentElm: Node,
-                        vnodes: Array<VNode>,
-                        startIdx: number,
-                        endIdx: number): void {
+    vnodes: Array<VNode>,
+    startIdx: number,
+    endIdx: number): void {
     for (; startIdx <= endIdx; ++startIdx) {
       let i: any, listeners: number, rm: () => void, ch = vnodes[startIdx];
       if (ch != null) {
@@ -177,9 +199,9 @@ export function init(modules: Array<Partial<Module>>, domApi?: DOMAPI) {
   }
 
   function updateChildren(parentElm: Node,
-                          oldCh: Array<VNode>,
-                          newCh: Array<VNode>,
-                          insertedVnodeQueue: VNodeQueue) {
+    oldCh: Array<VNode>,
+    newCh: Array<VNode>,
+    insertedVnodeQueue: VNodeQueue) {
     let oldStartIdx = 0, newStartIdx = 0;
     let oldEndIdx = oldCh.length - 1;
     let oldStartVnode = oldCh[0];
@@ -241,7 +263,7 @@ export function init(modules: Array<Partial<Module>>, domApi?: DOMAPI) {
       }
     }
     if (oldStartIdx > oldEndIdx) {
-      before = newCh[newEndIdx+1] == null ? null : newCh[newEndIdx+1].elm;
+      before = newCh[newEndIdx + 1] == null ? null : newCh[newEndIdx + 1].elm;
       addVnodes(parentElm, before, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
     } else if (newStartIdx > newEndIdx) {
       removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
@@ -283,6 +305,7 @@ export function init(modules: Array<Partial<Module>>, domApi?: DOMAPI) {
 
   return function patch(oldVnode: VNode | Element, vnode: VNode): VNode {
     let i: number, elm: Node, parent: Node;
+
     const insertedVnodeQueue: VNodeQueue = [];
     for (i = 0; i < cbs.pre.length; ++i) cbs.pre[i]();
 

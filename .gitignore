@@ -61,3 +61,5 @@ vnode.js
 vnode.js.map
 /modules
 /helpers
+
+.vscode
