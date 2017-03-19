@@ -52,7 +52,7 @@ describe('snabbdom', function () {
   });
 
   describe('custom element', function () {
-    it('has custom tag', function () {
+    it('is: a custom tag', function () {
       let myElem = h('aside', {
         is: 'my-elem'
       })
@@ -60,6 +60,14 @@ describe('snabbdom', function () {
       data = patch(vnode0, myElem).data;
       assert.equal(data.is, 'my-elem');
     });
+
+    it('has custom tag', function () {
+      let myElem = h('my-elem')
+
+      elm = patch(vnode0, myElem).elm;
+      assert.equal(elm.tagName, 'MY-ELEM');
+    });
+
   });
 
   describe('hyperscript', function () {
